@@ -17,7 +17,7 @@ class Migration
 
     public function __construct()
     {
-        $this->db = $db();
+        $this->db = db();
 
         try{
             $this->db->beginTransaction();

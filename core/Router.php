@@ -21,8 +21,9 @@ class Router
         static::$routes[$route] = $params;
     }
 
-    static public function dispatch(string $uri):void
+    static public function dispatch(string $uri):string
     {
+        $data = [];
         $uri = static::removeQueryVariables($uri);
         $uri = trim($uri,'/');
 
@@ -35,10 +36,16 @@ class Router
 
             if ($controller->before($action, static::$params))
             {
-                call_user_func_array([$controller, $action], static::$params);
+                $data = call_user_func_array([$controller, $action], static::$params);
                 $controller->after($action);
             }
         }
+
+        return json_encode([
+            "data"  => $data,
+            "status" => "OK",
+            "code" => 200
+        ]);
     }
 
     static protected function getAction(Controller $controller): string
@@ -69,7 +76,7 @@ class Router
 
     }
 
-    static protected function checkRequestMethod()
+    static protected function checkRequestMethod(): void
     {
         if (array_key_exists('method', static::$params)){
             $requestMethod = strtolower($_SERVER['REQUEST_METHOD']);
@@ -112,5 +119,10 @@ class Router
             }
         }
         return $params;
+    }
+
+    static protected function removeQueryVariables(string $uri): string
+    {
+        return preg_replace('/([\w\/\-]+)\?([\w\/=\d%*&\?]+)/i', '$1', $uri);
     }
 }

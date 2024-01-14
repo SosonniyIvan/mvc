@@ -44,7 +44,9 @@ class Config
         $needle = array_shift($keys);
 
         if (array_key_exists($needle, $configs)){
-            $value = is_array($configs[$needle]) ? $this->findParamByKeys($keys, $configs[$needle]) : $configs[$needle];
+            $value = is_array($configs[$needle]) ?
+                $this->findParamByKeys($keys, $configs[$needle])
+                : $configs[$needle];
         }
 
         return $value;
