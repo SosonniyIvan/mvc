@@ -1,6 +1,7 @@
 <?php
 
 use Core\Config;
+use ReallySimpleJWT\Token;
 
 function requestBody(): array
 {
@@ -13,6 +14,14 @@ function requestBody(): array
     }
 
     return $data;
+}
+
+function error_response(Exception $e): void
+{
+    die(json_response(422, [
+        'data'=> ['message' => $e->getMessage()],
+        'errors' => $e->getTrace()
+    ]));
 }
 
 function json_response($code = 200, array $data = []): string
@@ -30,7 +39,8 @@ function json_response($code = 200, array $data = []): string
         200 => '200 OK',
         400 => '400 Bad request',
         422 => 'Unprocessable Entity',
-        500 => '500 Internal Server Error'
+        500 => '500 Internal Server Error',
+        403 => 'Forbidden'
     );
 
     // ok, validation error, or failure
@@ -43,6 +53,28 @@ function json_response($code = 200, array $data = []): string
         ...$data
     ));
 
+}
+
+function getToken()
+{
+    $headers = apache_request_headers();
+
+    if (empty($headers['Authorization'])){
+        throw new Exception('The request should contain an auth token', 422);
+    }
+
+    return str_replace('Beare', '', $headers['Authorization']);
+}
+
+function authId():int
+{
+    $tokenData = Token::getPayload(getToken());
+
+    if (empty($tokenData['user_id'])){
+        throw new Exception('Token structure is invalid', 422);
+    }
+
+    return $tokenData['user_id'];
 }
 
 

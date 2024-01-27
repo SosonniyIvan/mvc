@@ -6,6 +6,7 @@ use App\Models\User;
 use app\Validators\Auth\AuthValidator;
 use app\Validators\Auth\RegisterValidator;
 use Core\Controller;
+use ReallySimpleJWT\Token;
 
 class AuthController extends Controller
 {
@@ -15,17 +16,18 @@ class AuthController extends Controller
         $validator = new RegisterValidator();
 
         if($validator->validate($data)){
-            $id = User::create([
+            $user = User::create([
                     ...$data,
                     'password' => password_hash($data['password'], PASSWORD_BCRYPT)
             ]);
 
             return $this->response(
                 200,
-                User::find($id)->toArray()
+                $user->toArray()
             );
-
         }
+
+        return $this->response(200, [], $validator->getErrors());
 
     }
 
@@ -38,7 +40,8 @@ class AuthController extends Controller
         {
             $user = User::findBy('email', $data['email']);
             if (password_verify($data['password'], $user->password)){
-                $token = random_bytes(32);
+                $expiration = time() + 3600;
+                $token = Token::create($user->id, $user->password, $expiration, 'localhost');
 
                 return $this->response(200, compact('token'));
 
