@@ -2,11 +2,7 @@
 
 namespace app\Validators\Notes;
 
-use App\Models\Folder;
-use App\Validators\BaseValidator;
-use Enums\SQL;
-
-class CreateNotesValidator extends BaseValidator
+class CreateNotesValidator extends Base
 {
 
     protected array $rules = [
@@ -20,21 +16,19 @@ class CreateNotesValidator extends BaseValidator
         'folder_id' => 'folder id should be exists in request and has type int'
     ];
 
-    protected array $skip = ['user_id', 'updated_at'];
-
-    public function validateFolderId(int $id): bool
-    {
-        return Folder::where('id', '=', $id)
-            ->startCondition()
-            ->andWhere('user_id', '=', authId())
-            ->orWhere('user_id', SQL::IS_OPERATOR->value, SQL::NULL->value)
-            ->endCondition()->exists();
-    }
-
     public function validate(array $fields = []): bool
     {
-        $result =[parent::validate($fields),
-        $this->validateFolderId($fields['folder_id'])];
+        $result =[
+            parent::validate($fields),
+            $this->validateFolderId($fields['folder_id']),
+            !$this->checkTitleOnDuplication(
+                $fields['title'],
+                $fields['folder_id'],
+                $fields['user_id']
+            ),
+            $this->validateBooleanValue($fields, 'pinned'),
+            $this->validateBooleanValue($fields, 'completed'),
+        ];
 
         return !in_array(false,$result);
     }

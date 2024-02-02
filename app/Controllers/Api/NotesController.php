@@ -2,7 +2,6 @@
 
 namespace app\Controllers\Api;
 
-use App\Models\Folder;
 use App\Models\Note;
 use App\Validators\Notes\CreateNotesValidator;
 use App\Validators\Notes\UpdateNotesValidator;
@@ -12,7 +11,13 @@ class NotesController extends BaseApiController
 {
     public function index()
     {
-        return $this->response(body: Note::where('user_id', '=', authId())->orderBy(['updated_at' => SqlOrder::DESC])->get());
+        return $this->response(body: Note::where('user_id', '=', authId())->orderBy(
+            [
+                'pinned' => SqlOrder::DESC,
+                'completed' => SqlOrder::ASC,
+                'update_at' => SqlOrder::DESC,
+            ])
+            ->get());
     }
 
     public function show(int $id)
@@ -57,11 +62,11 @@ class NotesController extends BaseApiController
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
-        $validator = new UpdateNotesValidator();
+        $validator = new UpdateNotesValidator($note);
 
-//        if ($validator->validate($data) && $folder = $folder->update($data)) {
-//            return $this->response(body: $folder->toArray());
-//       }
+        if ($validator->validate($data) && $note = $note->update($data)) {
+            return $this->response(body: $note->toArray());
+       }
 
         return $this->response(errors: $validator->getErrors());
     }
